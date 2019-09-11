@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
-import Keyboard from "./components/Keyboard";
 import CurrentWord from "./components/CurrentWord";
+import Keyboard from "./components/Keyboard";
 import Life from "./components/Life";
+import Scoring from "./components/Scoring";
+import Form from "./components/Form";
+import { getUsers, addUser } from "./utils";
+const faker = require("faker");
+faker.locale = "fr";
 
 function App() {
 	const initialState = {
@@ -11,33 +16,63 @@ function App() {
 		alphabet       : "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toUpperCase().split(""),
 		usedLetters    : [],
 		win            : 0, // 0: neutral | 1: win | -1: lost
-		life           : null
+		life           : null,
+		currentUser    : { username: "", score: 0 },
+		users          : getUsers()
 	};
 
-	const [{ wordCollection, currentWord, alphabet, usedLetters, win, life }, setState] = useState(initialState);
+	const [{ currentWord, alphabet, usedLetters, win, life, currentUser, users }, setState] = useState(initialState);
 
-	const generateNewWord = () => {
+	/* const generateNewWord = () => {
 		const randomIndex = Math.floor(Math.random() * wordCollection.length);
 		return wordCollection[randomIndex];
+	}; */
+
+	// Check Use - if user not exist, stocke user in localstorage
+	const checkUser = () => {
+		if (currentUser.username.length >= 4) {
+			let users = getUsers();
+			if (users === null) {
+				addUser([currentUser]);
+			} else {
+				let userExist = false;
+				for (let i = 0; i < users.length; i++) {
+					if (users[i].username === currentUser.username) {
+						userExist = true;
+						break;
+					}
+				}
+
+				if (userExist === false) {
+					addUser([...users, currentUser]);
+				}
+			}
+		}
 	};
 
 	const initGame = () => {
-		console.log("Init Game");
-		let word = generateNewWord().toUpperCase();
+		// console.log("Init Game");
+		// let word = generateNewWord().toUpperCase();
+		let word = faker.lorem.word().toUpperCase();
+		// console.log(word);
+
 		setState(prevState => ({
 			...prevState,
 			currentWord   : word,
 			usedLetters   : [],
 			findedLetters : [],
 			win           : 0,
-			life          : word.length * 2
+			life          : word.length * 2,
+			users         : getUsers()
 		}));
+
+		// Check User
+		checkUser();
 	};
 
 	// Init Game
 	useEffect(() => {
 		// initGame();
-
 		const eventListener = e => {
 			if (e.key === "Enter") {
 				initGame();
@@ -52,8 +87,7 @@ function App() {
 	// Check Game Status
 	useEffect(
 		() => {
-			console.log("Check Game Status");
-
+			// // console.log("Check Game Status");
 			// Game win
 			if (currentWord !== null && usedLetters.length !== 0) {
 				let wordFinded = true;
@@ -64,7 +98,7 @@ function App() {
 					}
 				}
 				if (wordFinded) {
-					console.log("Game Win");
+					// console.log("Game Win");
 					setState(currentState => ({ ...currentState, win: 1 }));
 				}
 			}
@@ -73,11 +107,41 @@ function App() {
 			// Si life est inferieur ou égal à 0 et win est égal à 0 (neutre),
 			// Alors on a perdu
 			if (life <= 0 && win === 0 && currentWord !== null) {
-				console.log("Game Over");
+				// // console.log("Game Over");
 				setState(currentState => ({ ...currentState, win: -1 }));
 			}
 		},
 		[currentWord, usedLetters, win, life]
+	);
+
+	// Score
+	useEffect(
+		() => {
+			if (win === 1) {
+				// console.log("currentUser", currentUser);
+				// console.log("Users avant for", users);
+				for (let i = 0; i < users.length; i++) {
+					if (users[i].username === currentUser.username) {
+						users[i].score += life;
+						break;
+					}
+				}
+				// console.log("Users apres for", users);
+				// Update Users
+				addUser(users);
+				setState(prevState => ({
+					...prevState,
+					users : users
+				}));
+				// setState(prevState => ({ ...prevState, score: prevState.score + life }));
+			}
+			return () => {
+				if (win === -1) {
+					setState(prevState => ({ ...prevState, win: 0 }));
+				}
+			};
+		},
+		[win, life, currentUser, users]
 	);
 
 	const clickLetter = letter => {
@@ -92,16 +156,34 @@ function App() {
 				setState(currentState => ({ ...currentState, life: currentState.life - 1 }));
 			}
 		} else {
-			console.log("La lettre déjà tapé");
+			// console.log("La lettre déjà tapé");
 		}
+	};
+
+	const handleChangeInput = event => {
+		// // console.log(event.target.value);
+		event.persist();
+
+		setState(prevState => ({
+			...prevState,
+			currentUser : { username: event.target.value, score: prevState.currentUser.score }
+		}));
 	};
 
 	return (
 		<div className="app">
 			<div className="container">
 				<h1 className="title">Jeu du Pendu</h1>
-				{win === 1 && <h4>Vous avez gangé <span className="emoji__win">😎😎✌✌</span></h4>}
-				{win === -1 && <h4>Vous avez perdu <span className="emoji__lost">😠😠👇👇</span></h4>}
+				{win === 1 && (
+					<h4>
+						Yes !!! Bravo <span className="emoji__win">😎😎✌✌</span>
+					</h4>
+				)}
+				{win === -1 && (
+					<h4>
+						Game Over !!! Louseur !!! <span className="emoji__lost">😠😠👇👇</span>
+					</h4>
+				)}
 				{currentWord !== null && <Life life={life} win={win} />}
 				{currentWord !== null && <CurrentWord currentWord={currentWord} usedLetters={usedLetters} win={win} />}
 				{win === 0 &&
@@ -113,16 +195,21 @@ function App() {
 						currentWord={currentWord}
 					/>
 				)}
+
+				<Form currentWord={currentWord} currentUser={currentUser} handleChangeInput={handleChangeInput} />
+
 				{(currentWord === null || win !== 0) && (
-					<button className="btn__new__game" onClick={() => initGame()}>
-						Novelle partie
+					<button
+						className="btn__new__game"
+						onClick={() => initGame()}
+						disabled={currentUser.username.length < 4 ? true : false}
+					>
+						{currentWord === null ? "Jouer" : "Novelle partie"}
 					</button>
 				)}
 			</div>
 
-			<div className="score">
-				<h3>Score</h3>
-			</div>
+			<Scoring currentUser={currentUser} users={users} />
 		</div>
 	);
 }

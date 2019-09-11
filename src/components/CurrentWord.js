@@ -9,7 +9,7 @@ function CurrentWord({ currentWord, usedLetters, win }) {
 				if (usedLetters.indexOf(letter) === -1 && win === -1) status = "lost";
 
 				return (
-					<span key={"letter_" + key} className={status}>
+					<span key={"letter_" + key} className={"letter " + status}>
 						{status === "finded" ? letter : win === -1 ? letter : "?"}
 					</span>
 				);
