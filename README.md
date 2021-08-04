@@ -1,4 +1,4 @@
-# Jeu de Pendu developpé avec React
+# Jeu du pendu développé avec React
 
 
 
