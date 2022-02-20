@@ -6,8 +6,9 @@ import Life from "./components/Life";
 import Scoring from "./components/Scoring";
 import Form from "./components/Form";
 import { getUsers, addUser } from "./utils";
-const faker = require("faker");
-faker.locale = "fr";
+import { faker } from "@faker-js/faker";
+
+faker.setLocale("fr");
 
 function App() {
   const initialState = {
@@ -65,7 +66,7 @@ function App() {
       default:
         break;
     }
-    setState(prevState => ({ ...prevState, formErrors, [inputName]: inputValue }));
+    setState((prevState) => ({ ...prevState, formErrors, [inputName]: inputValue }));
   };
 
   const initGame = () => {
@@ -76,9 +77,9 @@ function App() {
     // set form errors
     const inputs = document.querySelectorAll("input");
     if (currentUser.username.length < 4) {
-      inputs.forEach(input => setFormErrorsMessage(formErrors, input.name, input.value));
+      inputs.forEach((input) => setFormErrorsMessage(formErrors, input.name, input.value));
     } else {
-      setState(prevState => ({
+      setState((prevState) => ({
         ...prevState,
         currentWord: word,
         usedLetters: [],
@@ -95,7 +96,7 @@ function App() {
   // Init Game
   useEffect(() => {
     // initGame();
-    const eventListener = e => {
+    const eventListener = (e) => {
       if (e.key === "Enter") {
         initGame();
       }
@@ -120,7 +121,7 @@ function App() {
       }
       if (wordFinded) {
         // console.log("Game Win");
-        setState(currentState => ({ ...currentState, win: 1 }));
+        setState((currentState) => ({ ...currentState, win: 1 }));
       }
     }
 
@@ -129,7 +130,7 @@ function App() {
     // Alors on a perdu
     if (life <= 0 && win === 0 && currentWord !== null) {
       // // console.log("Game Over");
-      setState(currentState => ({ ...currentState, win: -1 }));
+      setState((currentState) => ({ ...currentState, win: -1 }));
     }
   }, [currentWord, usedLetters, win, life]);
 
@@ -145,35 +146,35 @@ function App() {
       // console.log("Users apres for", users);
       // Update Users
       addUser(users);
-      setState(prevState => ({ ...prevState, users: users }));
+      setState((prevState) => ({ ...prevState, users: users }));
     }
     return () => {
       if (win === -1) {
-        setState(prevState => ({ ...prevState, win: 0 }));
+        setState((prevState) => ({ ...prevState, win: 0 }));
       }
     };
   }, [win, life, currentUser, users]);
 
-  const clickLetter = letter => {
+  const clickLetter = (letter) => {
     letter = letter.toUpperCase();
     // Si la lettre tapé n'est pas encore dans le usedLetters
     // Alors, on l'ajoute (maj state - usedLetters)
     if (usedLetters.indexOf(letter) === -1) {
-      setState(currentState => ({ ...currentState, usedLetters: [...usedLetters, letter] }));
+      setState((currentState) => ({ ...currentState, usedLetters: [...usedLetters, letter] }));
       // Si la lettre tapé n'est pas dans le currentWorld
       // Alors on décrémente la vie (maj state - life)
       if (currentWord.indexOf(letter) === -1) {
-        setState(currentState => ({ ...currentState, life: currentState.life - 1 }));
+        setState((currentState) => ({ ...currentState, life: currentState.life - 1 }));
       }
     } else {
       // console.log("La lettre déjà tapé");
     }
   };
 
-  const handleChangeInput = event => {
+  const handleChangeInput = (event) => {
     event.persist();
     const { value, name } = event.target;
-    setState(prevState => ({
+    setState((prevState) => ({
       ...prevState,
       currentUser: { username: value, score: prevState.currentUser.score }
     }));
